@@ -3,7 +3,8 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import * as XLSX from "xlsx";
-import { useProjectStore } from "../../../lib/store/useProjectStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
+import { VisualsSection } from "@/components/projects/VisualsSection";
 
 function ArrowLeftIcon(props: React.ComponentPropsWithoutRef<"svg">) {
   return (
@@ -240,10 +241,8 @@ export default function ProjectPage() {
 
         {tab === "visuals" && (
             <section className="space-y-4 animate-in fade-in duration-300">
-              <div className="p-6 border rounded-xl bg-white shadow-sm">
-                <h2 className="text-lg font-medium mb-2">Визуализация</h2>
-                <p className="text-sm text-gray-600">Здесь позже добавим гистограмму/scatter/boxplot (Recharts).</p>
-              </div>
+              {/* Мы передаем rows прямо в компонент */}
+              <VisualsSection data={rows} />
             </section>
         )}
 
