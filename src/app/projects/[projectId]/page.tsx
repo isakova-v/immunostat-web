@@ -1,17 +1,55 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
+import * as XLSX from "xlsx";
 
 type Row = Record<string, unknown>;
 
-export default function ProjectPage({ params }: { params: { projectId: string }}) {
+export default function ProjectPage() {
   const router = useRouter();
   const search = useSearchParams();
+  const params = useParams();
+
+  // Получаем projectId через хук useParams для корректной работы при навигации
+  const rawProjectId = params?.projectId;
+  const projectId = Array.isArray(rawProjectId) ? rawProjectId[0] : rawProjectId;
+
   const tab = (search.get("tab") ?? "data") as "data" | "visuals" | "hla" | "settings";
 
-  // локальное состояние данных (для MVP; позже можно вынести в стор)
+  // локальное состояние данных
   const [rows, setRows] = useState<Row[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Ключ для хранения данных в LocalStorage
+  const storageKey = projectId ? `project_data_${projectId}` : null;
+
+  // Восстанавливаем данные при монтировании компонента или смене projectId
+  useEffect(() => {
+    if (!storageKey) return;
+
+    // Сбрасываем инпут файла при смене проекта
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    // Пытаемся загрузить данные для ТЕКУЩЕГО проекта
+    try {
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRows(parsed);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке сохраненных данных:", error);
+    }
+
+    // Если данных в localStorage нет для этого ID, обязательно очищаем состояние,
+    // чтобы не показывать данные от предыдущего проекта.
+    setRows([]);
+  }, [storageKey]);
 
   function go(nextTab: typeof tab) {
     const q = new URLSearchParams(search);
@@ -20,103 +58,182 @@ export default function ProjectPage({ params }: { params: { projectId: string }}
   }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!storageKey) {
+      alert("Не удалось определить ID проекта.");
+      return;
+    }
+
     const f = e.target.files?.[0];
     if (!f) return;
+
     const ext = f.name.split(".").pop()?.toLowerCase();
-    if (ext === "csv") {
-      const text = await f.text();
-      const [header, ...lines] = text.split(/\r?\n/).filter(Boolean);
-      const cols = header.split(",").map((s) => s.trim());
-      const parsed = lines.map((line) => {
-        const vals = line.split(",");
-        const obj: Row = {};
-        cols.forEach((c, i) => (obj[c] = vals[i] ?? ""));
-        return obj;
-      });
-      setRows(parsed);
-    } else {
-      // простейший XLSX-парсер не тянем — покажем сообщение
-      alert("Для XLSX добавим позже. Сейчас загрузите CSV.");
+    let newRows: Row[] = [];
+
+    try {
+      if (ext === "csv") {
+        const text = await f.text();
+        const [header, ...lines] = text.split(/\r?\n/).filter(Boolean);
+        const cols = header.split(",").map((s) => s.trim());
+        newRows = lines.map((line) => {
+          const vals = line.split(",");
+          const obj: Row = {};
+          cols.forEach((c, i) => (obj[c] = vals[i] ?? ""));
+          return obj;
+        });
+      } else if (ext === "xlsx" || ext === "xls") {
+        const buffer = await f.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        newRows = XLSX.utils.sheet_to_json<Row>(worksheet, { defval: "" });
+      } else {
+        alert("Пожалуйста, загрузите файл формата .csv или .xlsx");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      setRows(newRows);
+
+      // Сохраняем данные в LocalStorage конкретно для этого проекта
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newRows));
+      } catch (storageError) {
+        console.error("Ошибка при сохранении в LocalStorage:", storageError);
+        alert("Данные отображены, но не сохранены (файл слишком большой).");
+      }
+
+    } catch (error) {
+      console.error("Ошибка парсинга файла:", error);
+      alert("Не удалось прочитать файл. Проверьте формат.");
+    }
+  }
+
+  function clearData() {
+    if (!storageKey) return;
+    if (confirm("Вы уверены, что хотите удалить загруженные данные для этого проекта?")) {
+      setRows([]);
+      localStorage.removeItem(storageKey);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
-  const cols = useMemo(() => Array.from(new Set(rows.flatMap(Object.keys))), [rows]);
+  const cols = useMemo(() => {
+    if (rows.length === 0) return [];
+    return Array.from(new Set(rows.flatMap(Object.keys)));
+  }, [rows]);
+
   const preview = rows.slice(0, 50);
 
+  if (!projectId) {
+    return <div className="p-4">Загрузка проекта...</div>;
+  }
+
   return (
-    <div className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Project: {params.projectId}</h1>
-      </header>
+      <div className="space-y-4">
+        <header className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Project: {projectId}</h1>
+        </header>
 
-      {/* Вкладки без внешних зависимостей */}
-      <div className="flex gap-2">
-        {(["data","visuals","hla","settings"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => go(t)}
-            className={`px-3 py-1.5 rounded-md border text-sm ${
-              tab === t ? "bg-black text-white" : "bg-white hover:bg-gray-50"
-            }`}
-          >
-            {t.toUpperCase()}
-          </button>
-        ))}
+        {/* Вкладки */}
+        <div className="flex gap-2">
+          {(["data","visuals","hla","settings"] as const).map((t) => (
+              <button
+                  key={t}
+                  onClick={() => go(t)}
+                  className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                      tab === t ? "bg-black text-white border-black" : "bg-white hover:bg-gray-50 border-gray-200"
+                  }`}
+              >
+                {t.toUpperCase()}
+              </button>
+          ))}
+        </div>
+
+        {/* Контент вкладок */}
+        {tab === "data" && (
+            <section className="space-y-3">
+              <div className="flex items-end justify-between">
+                <div className="space-y-1 w-full max-w-md">
+                  <label className="text-sm font-medium block">Upload Data</label>
+                  <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv, .xlsx, .xls"
+                      onChange={onFile}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
+                  />
+                  <p className="text-xs text-gray-500">Поддерживаются форматы CSV и XLSX.</p>
+                </div>
+                {rows.length > 0 && (
+                    <button
+                        onClick={clearData}
+                        className="text-xs text-red-600 hover:underline mb-2"
+                    >
+                      Очистить данные
+                    </button>
+                )}
+              </div>
+
+              {rows.length > 0 ? (
+                  <div className="rounded-md border border-gray-200 overflow-auto max-h-[600px]">
+                    <table className="min-w-full text-sm text-left whitespace-nowrap">
+                      <thead className="bg-gray-100 sticky top-0 z-10">
+                      <tr>
+                        {cols.map((c) => (
+                            <th key={c} className="px-4 py-2 font-semibold text-gray-700 border-b border-gray-200">
+                              {c}
+                            </th>
+                        ))}
+                      </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                      {preview.map((r, i) => (
+                          <tr key={i} className="hover:bg-gray-50 bg-white">
+                            {cols.map((c) => (
+                                <td key={c} className="px-4 py-2 text-gray-600">
+                                  {String((r as any)[c] ?? "")}
+                                </td>
+                            ))}
+                          </tr>
+                      ))}
+                      </tbody>
+                    </table>
+                    <div className="bg-gray-50 px-4 py-2 text-xs text-gray-500 border-t sticky bottom-0">
+                      Показано первых 50 строк из {rows.length} (Данные сохранены локально для проекта {projectId})
+                    </div>
+                  </div>
+              ) : (
+                  <div className="p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
+                    Нет данных для проекта {projectId}. Загрузите файл.
+                  </div>
+              )}
+            </section>
+        )}
+
+        {tab === "visuals" && (
+            <section className="space-y-2">
+              <h2 className="text-lg font-medium">Visuals</h2>
+              <p className="text-sm text-gray-600">Здесь позже добавим гистограмму/scatter/boxplot (Recharts).</p>
+            </section>
+        )}
+
+        {tab === "hla" && (
+            <section className="space-y-2">
+              <h2 className="text-lg font-medium">HLA</h2>
+              <p className="text-sm text-gray-600">Здесь позже будет нормализация аллелей и частоты.</p>
+            </section>
+        )}
+
+        {tab === "settings" && (
+            <section className="space-y-2">
+              <h2 className="text-lg font-medium">Settings</h2>
+              <ul className="list-disc pl-5 text-sm text-gray-700">
+                <li>Default grouping</li>
+                <li>Saved views</li>
+                <li>Share link</li>
+              </ul>
+            </section>
+        )}
       </div>
-
-      {/* Контент вкладок */}
-      {tab === "data" && (
-        <section className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Upload CSV</label>
-            <input ref={fileInputRef} type="file" accept=".csv" onChange={onFile} className="block" />
-            <p className="text-xs text-gray-500">XLSX добавим позже, пока используйте CSV с заголовком колонок.</p>
-          </div>
-
-          {preview.length > 0 && (
-            <div className="rounded-md border overflow-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>{cols.map((c) => <th key={c} className="px-3 py-2 text-left font-medium">{c}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {preview.map((r, i) => (
-                    <tr key={i} className="odd:bg-white even:bg-gray-50">
-                      {cols.map((c) => <td key={c} className="px-3 py-1.5">{String((r as any)[c] ?? "")}</td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
-
-      {tab === "visuals" && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">Visuals</h2>
-          <p className="text-sm text-gray-600">Здесь позже добавим гистограмму/scatter/boxplot (Recharts).</p>
-        </section>
-      )}
-
-      {tab === "hla" && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">HLA</h2>
-          <p className="text-sm text-gray-600">Здесь позже будет нормализация аллелей и частоты.</p>
-        </section>
-      )}
-
-      {tab === "settings" && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">Settings</h2>
-          <ul className="list-disc pl-5 text-sm text-gray-700">
-            <li>Default grouping</li>
-            <li>Saved views</li>
-            <li>Share link</li>
-          </ul>
-        </section>
-      )}
-    </div>
   );
 }
