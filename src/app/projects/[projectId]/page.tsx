@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as XLSX from "xlsx";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { VisualsSection } from "@/components/projects/VisualsSection";
+import { HLAEffectSizePanel } from "@/components/hla/HLAEffectSizePanel";
 
 function ArrowLeftIcon(props: React.ComponentPropsWithoutRef<"svg">) {
   return (
@@ -247,12 +248,9 @@ export default function ProjectPage() {
         )}
 
         {tab === "hla" && (
-            <section className="space-y-4 animate-in fade-in duration-300">
-              <div className="p-6 border rounded-xl bg-white shadow-sm">
-                <h2 className="text-lg font-medium mb-2">HLA Анализ</h2>
-                <p className="text-sm text-gray-600">Здесь позже будет нормализация аллелей и частоты.</p>
-              </div>
-            </section>
+          <section className="space-y-4 animate-in fade-in duration-300">
+            <HLAEffectSizePanel />
+          </section>
         )}
 
         {tab === "settings" && (
