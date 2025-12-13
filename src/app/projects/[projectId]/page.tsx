@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import * as XLSX from "xlsx";
+import { useProjectStore } from "../../../lib/store/useProjectStore";
 
 type Row = Record<string, unknown>;
 
@@ -10,9 +11,16 @@ export default function ProjectPage() {
   const search = useSearchParams();
   const params = useParams();
 
-  // Получаем projectId через хук useParams для корректной работы при навигации
+  // Получаем projectId
   const rawProjectId = params?.projectId;
   const projectId = Array.isArray(rawProjectId) ? rawProjectId[0] : rawProjectId;
+
+  // Получаем данные о проекте из стора для отображения названия
+  const projects = useProjectStore((s) => s.projects);
+  const currentProject = useMemo(() =>
+          projects.find(p => p.id === projectId),
+      [projects, projectId]
+  );
 
   const tab = (search.get("tab") ?? "data") as "data" | "visuals" | "hla" | "settings";
 
@@ -27,12 +35,10 @@ export default function ProjectPage() {
   useEffect(() => {
     if (!storageKey) return;
 
-    // Сбрасываем инпут файла при смене проекта
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
 
-    // Пытаемся загрузить данные для ТЕКУЩЕГО проекта
     try {
       const savedData = localStorage.getItem(storageKey);
       if (savedData) {
@@ -46,8 +52,6 @@ export default function ProjectPage() {
       console.error("Ошибка при загрузке сохраненных данных:", error);
     }
 
-    // Если данных в localStorage нет для этого ID, обязательно очищаем состояние,
-    // чтобы не показывать данные от предыдущего проекта.
     setRows([]);
   }, [storageKey]);
 
@@ -94,7 +98,6 @@ export default function ProjectPage() {
 
       setRows(newRows);
 
-      // Сохраняем данные в LocalStorage конкретно для этого проекта
       try {
         localStorage.setItem(storageKey, JSON.stringify(newRows));
       } catch (storageError) {
@@ -130,8 +133,11 @@ export default function ProjectPage() {
 
   return (
       <div className="space-y-4">
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Project: {projectId}</h1>
+        <header className="flex items-center justify-between border-b pb-4">
+          <div>
+            <h1 className="text-2xl font-bold">{currentProject ? currentProject.name : 'Загрузка...'}</h1>
+            <p className="text-xs text-gray-400 mt-1">ID: {projectId}</p>
+          </div>
         </header>
 
         {/* Вкладки */}
@@ -199,12 +205,12 @@ export default function ProjectPage() {
                       </tbody>
                     </table>
                     <div className="bg-gray-50 px-4 py-2 text-xs text-gray-500 border-t sticky bottom-0">
-                      Показано первых 50 строк из {rows.length} (Данные сохранены локально для проекта {projectId})
+                      Показано первых 50 строк из {rows.length} (Данные сохранены локально для проекта {currentProject?.name})
                     </div>
                   </div>
               ) : (
                   <div className="p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
-                    Нет данных для проекта {projectId}. Загрузите файл.
+                    Нет данных для проекта {currentProject?.name}. Загрузите файл.
                   </div>
               )}
             </section>

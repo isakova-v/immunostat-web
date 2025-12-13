@@ -1,22 +1,32 @@
-"use client";
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
-type Project = {
+export interface Project {
   id: string;
   name: string;
   createdAt: string;
-  updatedAt: string;
-  ownerId: string;
-  memberIds: string[];
-  settings: { savedViews: any[] };
-};
+}
 
-type State = {
+interface ProjectState {
   projects: Project[];
-  addProject: (p: Project) => void;
-};
+  addProject: (project: Project) => void;
+  deleteProject: (id: string) => void;
+}
 
-export const useProjectStore = create<State>((set) => ({
-  projects: [],
-  addProject: (p) => set((s) => ({ projects: [...s.projects, p] })),
-}));
+export const useProjectStore = create<ProjectState>()(
+    persist(
+        (set) => ({
+          projects: [],
+          addProject: (project) =>
+              set((state) => ({ projects: [project, ...state.projects] })),
+          deleteProject: (id) =>
+              set((state) => ({
+                projects: state.projects.filter((p) => p.id !== id),
+              })),
+        }),
+        {
+          name: "project-storage",
+          storage: createJSONStorage(() => localStorage),
+        }
+    )
+);
