@@ -1,8 +1,15 @@
 "use client";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import * as XLSX from "xlsx";
 import { useProjectStore } from "../../../lib/store/useProjectStore";
+
+function ArrowLeftIcon(props: React.ComponentPropsWithoutRef<"svg">) {
+  return (
+      <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  );
+}
 
 type Row = Record<string, unknown>;
 
@@ -133,12 +140,21 @@ export default function ProjectPage() {
 
   return (
       <div className="space-y-4">
-        <header className="flex items-center justify-between border-b pb-4">
-          <div>
-            <h1 className="text-2xl font-bold">{currentProject ? currentProject.name : 'Загрузка...'}</h1>
-            <p className="text-xs text-gray-400 mt-1">ID: {projectId}</p>
+        <div className="flex flex-col gap-2 border-b pb-4">
+          <Link
+              href="/projects"
+              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors w-fit"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            Список проектов
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">{currentProject ? currentProject.name : 'Проект'}</h1>
+              {currentProject && <p className="text-xs text-gray-400 font-mono mt-0.5">{currentProject.id}</p>}
+            </div>
           </div>
-        </header>
+        </div>
 
         {/* Вкладки */}
         <div className="flex gap-2">

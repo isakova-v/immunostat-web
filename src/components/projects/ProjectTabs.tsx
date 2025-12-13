@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = [
   { value: "data",     label: "Data" },
@@ -20,16 +19,4 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
   function onChange(val: string) {
     router.push(`/projects/${projectId}/${val}`);
   }
-
-  return (
-    <Tabs value={current} onValueChange={onChange} className="w-full">
-      <TabsList>
-        {TABS.map(t => (
-          <TabsTrigger key={t.value} value={t.value}>
-            {t.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
-  );
 }

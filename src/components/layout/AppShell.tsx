@@ -1,15 +1,13 @@
-import { PropsWithChildren } from "react";
+import React, { PropsWithChildren } from "react";
 import { Topbar } from "./Topbar";
-import { Sidebar } from "./Sidebar";
 
 export function AppShell({ children }: PropsWithChildren) {
-  return (
-    <div className="h-screen w-full grid grid-rows-[auto,1fr]">
-      <Topbar />
-      <div className="grid grid-cols-[260px,1fr]">
-        <Sidebar />
-        <main className="p-6 overflow-auto bg-muted/20">{children}</main>
-      </div>
-    </div>
-  );
+    return (
+        <div className="min-h-screen flex flex-col bg-gray-50">
+            <Topbar />
+            <main className="flex-1 w-full max-w-7xl mx-auto p-6">
+                {children}
+            </main>
+        </div>
+    );
 }
