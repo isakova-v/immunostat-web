@@ -33,24 +33,24 @@ export default function NewProjectPage() {
     };
 
     return (
-        <div className="max-w-md mx-auto mt-6 space-y-6">
+        <div className="max-w-md mx-auto mt-10 space-y-8">
             <div>
                 <Link
                     href="/projects"
-                    className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors mb-4"
+                    className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors mb-6"
                 >
                     <ArrowLeftIcon className="w-4 h-4" />
-                    Список проектов
+                    Назад к списку
                 </Link>
                 <div className="space-y-2 text-center">
-                    <h1 className="text-2xl font-bold">Новый проект</h1>
-                    <p className="text-gray-500 text-sm">Введите название для вашего нового рабочего пространства.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Новый проект</h1>
+                    <p className="text-gray-500">Создайте пространство для ваших данных</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label htmlFor="name" className="text-sm font-medium leading-none">
                         Название проекта
                     </label>
                     <input
@@ -58,8 +58,8 @@ export default function NewProjectPage() {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Например: Анализ когорты 2024"
-                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                        placeholder="Например: Анализ продаж Q3"
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                         autoFocus
                     />
                 </div>
@@ -67,14 +67,14 @@ export default function NewProjectPage() {
                 <div className="flex gap-3 pt-2">
                     <Link
                         href="/projects"
-                        className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-white hover:bg-gray-100 h-10 px-4 py-2"
+                        className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-gray-200 bg-white hover:bg-gray-50 h-10 px-4 py-2"
                     >
                         Отмена
                     </Link>
                     <button
                         type="submit"
                         disabled={!name.trim()}
-                        className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-black text-white hover:bg-gray-800 h-10 px-4 py-2"
+                        className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800 disabled:opacity-50 h-10 px-4 py-2"
                     >
                         Создать
                     </button>

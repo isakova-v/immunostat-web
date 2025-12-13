@@ -143,22 +143,22 @@ export default function ProjectsPage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-4xl mx-auto">
             {/* Компактный хедер */}
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-800">Мои проекты</h2>
+            <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900">Мои проекты</h2>
                 <Link
                     href="/projects/new"
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black text-white text-xs font-medium hover:bg-gray-800 transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm"
                 >
-                    <PlusIcon className="w-3.5 h-3.5" />
+                    <PlusIcon className="w-4 h-4" />
                     Новый проект
                 </Link>
             </div>
 
             {projects.length === 0 ? (
-                <div className="text-center py-16 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                    <p className="text-gray-400 text-sm mb-4">Список пуст</p>
+                <div className="text-center py-16 border border-dashed border-gray-300 rounded-xl bg-white">
+                    <p className="text-gray-500 text-sm mb-4">Список пуст</p>
                     <Link
                         href="/projects/new"
                         className="text-sm font-medium text-black underline hover:no-underline"
@@ -167,11 +167,11 @@ export default function ProjectsPage() {
                     </Link>
                 </div>
             ) : (
-                <ul className="grid gap-2">
+                <ul className="grid gap-3">
                     {projects.map((p) => (
                         <li
                             key={p.id}
-                            className="group relative flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-white hover:border-gray-300 hover:shadow-sm transition-all"
+                            className="group relative flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white hover:border-black hover:shadow-md transition-all"
                         >
                             {editingId === p.id ? (
                                 <div className="flex items-center gap-2 w-full" onClick={(e) => e.stopPropagation()}>
@@ -179,7 +179,7 @@ export default function ProjectsPage() {
                                         type="text"
                                         value={editName}
                                         onChange={(e) => setEditName(e.target.value)}
-                                        className="flex-grow text-sm border-b border-black outline-none bg-transparent py-1"
+                                        className="flex-grow text-base border-b-2 border-black outline-none bg-transparent py-1"
                                         autoFocus
                                         onClick={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => {
@@ -187,28 +187,26 @@ export default function ProjectsPage() {
                                             if (e.key === 'Escape') cancelEdit(e as any);
                                         }}
                                     />
-                                    <button onClick={saveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
-                                        <CheckIcon className="w-4 h-4" />
+                                    <button onClick={saveEdit} className="p-2 text-green-600 hover:bg-green-50 rounded">
+                                        <CheckIcon className="w-5 h-5" />
                                     </button>
-                                    <button onClick={cancelEdit} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
-                                        <XIcon className="w-4 h-4" />
+                                    <button onClick={cancelEdit} className="p-2 text-gray-400 hover:bg-gray-100 rounded">
+                                        <XIcon className="w-5 h-5" />
                                     </button>
                                 </div>
                             ) : (
                                 <>
                                     <Link
                                         href={`/projects/${p.id}?tab=data`}
-                                        className="flex-grow min-w-0 flex flex-col justify-center h-full absolute inset-0 z-0 pl-3"
+                                        className="flex-grow min-w-0 flex flex-col justify-center h-full absolute inset-0 z-0 pl-4"
                                     >
-                                        {/* Пустая ссылка для клика по всей области, текст отображается ниже */}
                                     </Link>
 
-                                    {/* Контент поверх ссылки */}
-                                    <div className="pointer-events-none z-10">
-                                        <div className="font-medium text-gray-900 text-sm group-hover:text-black transition-colors">
+                                    <div className="pointer-events-none z-10 pl-1">
+                                        <div className="font-semibold text-gray-900 text-base group-hover:text-black transition-colors">
                                             {p.name}
                                         </div>
-                                        <div className="text-[10px] text-gray-400 font-mono">
+                                        <div className="text-xs text-gray-400 font-mono mt-0.5">
                                             {new Date(p.createdAt).toLocaleDateString()}
                                         </div>
                                     </div>
@@ -216,14 +214,14 @@ export default function ProjectsPage() {
                                     <div className="flex items-center gap-1 z-10 ml-4 bg-white pl-2">
                                         <button
                                             onClick={(e) => startEdit(e, p)}
-                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
                                             title="Переименовать"
                                         >
                                             <PencilIcon className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={(e) => handleDelete(e, p.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
                                             title="Удалить"
                                         >
                                             <TrashIcon className="w-4 h-4" />
